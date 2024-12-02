@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esp32 Srinakharinwirot University</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #e53935;
+      text-align: center;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background-color: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #e53935;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #d32f2f;
+    }
+    .status {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .status-on {
+      color: green;
+    }
+    .status-off {
+      color: red;
+    }
+    .status-connecting {
+      color: orange;
+    }
+  </style>
+</head>
+<body>
+  <h1>Esp32 Srinakharinwirot University</h1>
+  <div class="container">
+    <!-- Sensor Data Display Card -->
+    <div class="card">
+      <h3>ข้อมูลเซ็นเซอร์</h3>
+      <p id="sensorData">กำลังรอข้อมูล...</p>
+    </div>
+
+    <!-- Button to Control Device 1 -->
+    <div class="card">
+      <h3>ควบคุมอุปกรณ์ 1</h3>
+      <button id="toggleButton1" class="button">เปิด</button>
+      <p id="deviceStatus1" class="status status-off">อุปกรณ์ปิดอยู่</p>
+    </div>
+
+    <!-- Button to Control Device 2 -->
+    <div class="card">
+      <h3>ควบคุมอุปกรณ์ 2</h3>
+      <button id="toggleButton2" class="button">เปิด</button>
+      <p id="deviceStatus2" class="status status-off">อุปกรณ์ปิดอยู่</p>
+    </div>
+
+    <!-- Button to Control Device 3 -->
+    <div class="card">
+      <h3>ควบคุมอุปกรณ์ 3</h3>
+      <button id="toggleButton3" class="button">เปิด</button>
+      <p id="deviceStatus3" class="status status-off">อุปกรณ์ปิดอยู่</p>
+    </div>
+
+    <!-- Status Indicator Card -->
+    <div class="card">
+      <h3>สถานะการเชื่อมต่อ</h3>
+      <p id="indicator" class="status status-connecting">กำลังเชื่อมต่อ...</p>
+    </div>
+  </div>
+
+  <script>
+    // WebSocket connection
+    const socket = new WebSocket('ws://localhost:3000');
+    
+    // When WebSocket is connected
+    socket.onopen = () => {
+      console.log('เชื่อมต่อกับ WebSocket แล้ว');
+      document.getElementById('indicator').textContent = 'เชื่อมต่อแล้ว';
+      document.getElementById('indicator').className = 'status status-on';
+    };
+
+    // Handle incoming messages
+    socket.onmessage = (event) => {
+      console.log('ได้รับข้อมูล:', event.data);
+      const data = JSON.parse(event.data);
+      
+      // Update sensor data
+      if (data.sensorValue) {
+        document.getElementById('sensorData').textContent = `ค่าจากเซ็นเซอร์: ${data.sensorValue}`;
+      }
+      
+      // Update device status for each device
+      if (data.deviceStatus1 !== undefined) {
+        const deviceStatus1 = data.deviceStatus1 ? 'เปิด' : 'ปิด';
+        document.getElementById('deviceStatus1').textContent = `อุปกรณ์ 1 ${deviceStatus1} อยู่`;
+        document.getElementById('deviceStatus1').className = data.deviceStatus1 ? 'status status-on' : 'status status-off';
+        document.getElementById('toggleButton1').textContent = data.deviceStatus1 ? 'ปิด' : 'เปิด';
+      }
+
+      if (data.deviceStatus2 !== undefined) {
+        const deviceStatus2 = data.deviceStatus2 ? 'เปิด' : 'ปิด';
+        document.getElementById('deviceStatus2').textContent = `อุปกรณ์ 2 ${deviceStatus2} อยู่`;
+        document.getElementById('deviceStatus2').className = data.deviceStatus2 ? 'status status-on' : 'status status-off';
+        document.getElementById('toggleButton2').textContent = data.deviceStatus2 ? 'ปิด' : 'เปิด';
+      }
+
+      if (data.deviceStatus3 !== undefined) {
+        const deviceStatus3 = data.deviceStatus3 ? 'เปิด' : 'ปิด';
+        document.getElementById('deviceStatus3').textContent = `อุปกรณ์ 3 ${deviceStatus3} อยู่`;
+        document.getElementById('deviceStatus3').className = data.deviceStatus3 ? 'status status-on' : 'status status-off';
+        document.getElementById('toggleButton3').textContent = data.deviceStatus3 ? 'ปิด' : 'เปิด';
+      }
+    };
+
+    // Handle WebSocket errors
+    socket.onerror = (error) => {
+      console.error('ข้อผิดพลาดจาก WebSocket:', error);
+      document.getElementById('indicator').textContent = 'ข้อผิดพลาด';
+      document.getElementById('indicator').className = 'status status-off';
+    };
+
+    // Handle WebSocket disconnection
+    socket.onclose = () => {
+      console.log('การเชื่อมต่อ WebSocket ถูกตัด');
+      document.getElementById('indicator').textContent = 'ไม่ได้เชื่อมต่อ';
+      document.getElementById('indicator').className = 'status status-off';
+    };
+
+    // Handle button click to toggle device states
+    document.getElementById('toggleButton1').onclick = () => {
+      const currentStatus = document.getElementById('deviceStatus1').textContent.includes('ปิด') ? false : true;
+      socket.send(JSON.stringify({ action: 'toggle', device: 1, status: !currentStatus }));
+    };
+
+    document.getElementById('toggleButton2').onclick = () => {
+      const currentStatus = document.getElementById('deviceStatus2').textContent.includes('ปิด') ? false : true;
+      socket.send(JSON.stringify({ action: 'toggle', device: 2, status: !currentStatus }));
+    };
+
+    document.getElementById('toggleButton3').onclick = () => {
+      const currentStatus = document.getElementById('deviceStatus3').textContent.includes('ปิด') ? false : true;
+      socket.send(JSON.stringify({ action: 'toggle', device: 3, status: !currentStatus }));
+    };
+  </script>
+</body>
+</html>
